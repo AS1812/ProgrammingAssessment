@@ -1,0 +1,64 @@
+
+#ANSIBLE PLAYBOOK
+
+  - hosts: "hosts"
+    tasks:
+     - name: Configuring Docker Repository
+    zypper_repository:
+    name: Docker
+    description: "Docker Repo"
+    baseurl: "https://download.docker.com/linux/sles/docker-ce.repo"
+    gpgcheck: no
+    register: x
+
+     - name: Checking Configuration Status
+       debug:
+         var: x.failed
+
+     - name: Installing Docker
+       package:
+          name: "install docker-ce docker-ce-cli containerd.io"
+         state: present
+      register: y
+
+     - name: Checking Install Status
+       debug:
+         var: y.failed
+
+     - Starting Docker Daemon
+       service:
+          name: docker
+         state: started
+       enabled: yes
+      when: y.failed == false
+      
+     - name: "Launch database container"
+        docker_container:
+         name: "todo-app"
+         image: mysql:5.7
+         volumes:
+          - "todo-mysql-data:/var/lib/mysql"
+         restart: true
+         networks:
+          - name: "todo-app"
+         alias:
+          - "mysql" 
+        env:s
+          MYSQL_DATABASE: todos
+          MYSQL_PASSWORD: secret
+
+      - name: Pull Getting-started Docker Image
+        docker_image:
+        name: as18/Getting-started
+        tag: lastest
+        source: pull
+
+      - name: Launtching Getting-started Container
+        docker_container:
+        name: Getting-started
+        image: as18/Getting-started
+        state: started
+        exposed_ports:
+               - "3000"
+        ports:
+               - "3000:3000"
